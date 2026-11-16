@@ -41,10 +41,20 @@ if config_env() == :prod do
 
   maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
 
+  # Hosted Postgres such as Neon needs SSL. Postgrex's `ssl: true` verifies the
+  # certificate and sends the hostname (SNI), which Neon uses for routing.
+  # URL options like ?sslmode=require&channel_binding=require are psql-style
+  # settings Postgrex doesn't use, so they are stripped here.
+  db_uri = URI.parse(database_url)
+  neon? = String.ends_with?(db_uri.host || "", ".neon.tech")
+  db_ssl? = System.get_env("DATABASE_SSL", to_string(neon?)) in ~w(true 1)
+
   config :chennai_assist, ChennaiAssist.Repo,
-    # ssl: true,
-    url: database_url,
-    pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
+    url: URI.to_string(%{db_uri | query: nil}),
+    ssl: db_ssl?,
+    # Works with Neon's pooled (PgBouncer) connection string too.
+    prepare: if(neon?, do: :unnamed, else: :named),
+    pool_size: String.to_integer(System.get_env("POOL_SIZE") || "5"),
     socket_options: maybe_ipv6
 
   # The secret key base is used to sign/encrypt cookies and other secrets.

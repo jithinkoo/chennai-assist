@@ -44,21 +44,28 @@ Database settings for development are in `config/dev.exs` (default user
 
 ## Deploy to Render
 
-The repo includes `render.yaml`, `build.sh` and `rel/overlays/bin/start`.
+The database runs on [Neon](https://neon.tech) (free Postgres); the app runs on
+Render. The repo includes `render.yaml`, `build.sh` and `rel/overlays/bin/start`.
 
-1. In Render: **New → Blueprint**, pick this GitHub repo, click **Apply**.
-   It creates a free PostgreSQL database and a web service named `jithin`
-   (address `jithin.onrender.com` if the name is free).
-2. When asked, fill in `ADMIN_EMAIL` and `ADMIN_PASSWORD` (12+ characters).
-   `BREVO_API_KEY` and `MAIL_FROM` are optional (for real emails).
-3. Wait for the first deploy. On every start the app migrates the database,
+1. **Neon:** create a project (region: Singapore, closest to Chennai). On the
+   dashboard click **Connect** and copy the connection string
+   (`postgresql://...neon.tech/neondb?sslmode=require...`).
+2. **Render:** **New → Blueprint**, pick this GitHub repo. It creates a web
+   service named `jithin` (address `jithin.onrender.com` if the name is free).
+3. When asked, fill in `DATABASE_URL` (the Neon string), `ADMIN_EMAIL` and
+   `ADMIN_PASSWORD` (12+ characters). `BREVO_API_KEY` and `MAIL_FROM` are
+   optional (for real emails). Click **Apply**.
+4. Wait for the first deploy. On every start the app migrates the database,
    loads the starter articles and creates the admin if missing.
-4. Log in at `https://<your-address>/users/log_in`.
+5. Log in at `https://<your-address>/users/log_in`.
 
-Free-plan limits: the service sleeps after 15 minutes idle (first visit then
-takes about a minute), the free database expires after 30 days, and the disk is
-wiped on each deploy, so uploaded photos disappear. For a real site use a paid
-instance with a persistent disk mounted at `UPLOADS_DIR`, and a paid database.
+SSL is switched on automatically for `*.neon.tech` hosts (override with
+`DATABASE_SSL=true|false`).
+
+Free-plan limits: the Render service sleeps after 15 minutes idle (first visit
+then takes about a minute), and its disk is wiped on each deploy, so uploaded
+photos disappear. For a real site use a paid instance with a persistent disk
+mounted at `UPLOADS_DIR`. Neon's free database does not expire.
 
 ## Configuration
 
