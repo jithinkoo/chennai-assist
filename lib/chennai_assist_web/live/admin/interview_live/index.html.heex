@@ -1,0 +1,48 @@
+<.header>
+  Listing Interviews
+  <:actions>
+    <.link patch={~p"/admin/interviews/new"}>
+      <.button>New Interview</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table
+  id="interviews"
+  rows={@streams.interviews}
+  row_click={fn {_id, interview} -> JS.navigate(~p"/admin/interviews/#{interview}") end}
+>
+  <:col :let={{_id, interview}} label="Title">{interview.title}</:col>
+  <:col :let={{_id, interview}} label="Slug">{interview.slug}</:col>
+  <:col :let={{_id, interview}} label="Person name">{interview.person_name}</:col>
+  <:col :let={{_id, interview}} label="Occupation">{interview.occupation}</:col>
+  <:col :let={{_id, interview}} label="Area">{interview.area}</:col>
+  <:col :let={{_id, interview}} label="Body">{interview.body}</:col>
+  <:col :let={{_id, interview}} label="Photo url">{interview.photo_url}</:col>
+  <:col :let={{_id, interview}} label="Published">{interview.published}</:col>
+  <:action :let={{_id, interview}}>
+    <div class="sr-only">
+      <.link navigate={~p"/admin/interviews/#{interview}"}>Show</.link>
+    </div>
+    <.link patch={~p"/admin/interviews/#{interview}/edit"}>Edit</.link>
+  </:action>
+  <:action :let={{id, interview}}>
+    <.link
+      phx-click={JS.push("delete", value: %{id: interview.id}) |> hide("##{id}")}
+      data-confirm="Are you sure?"
+    >
+      Delete
+    </.link>
+  </:action>
+</.table>
+
+<.modal :if={@live_action in [:new, :edit]} id="interview-modal" show on_cancel={JS.patch(~p"/admin/interviews")}>
+  <.live_component
+    module={ChennaiAssistWeb.Admin.InterviewLive.FormComponent}
+    id={@interview.id || :new}
+    title={@page_title}
+    action={@live_action}
+    interview={@interview}
+    patch={~p"/admin/interviews"}
+  />
+</.modal>

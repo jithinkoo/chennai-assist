@@ -1,0 +1,33 @@
+<.header>
+  Interview {@interview.id}
+  <:subtitle>This is a interview record from your database.</:subtitle>
+  <:actions>
+    <.link patch={~p"/admin/interviews/#{@interview}/show/edit"} phx-click={JS.push_focus()}>
+      <.button>Edit interview</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.list>
+  <:item title="Title">{@interview.title}</:item>
+  <:item title="Slug">{@interview.slug}</:item>
+  <:item title="Person name">{@interview.person_name}</:item>
+  <:item title="Occupation">{@interview.occupation}</:item>
+  <:item title="Area">{@interview.area}</:item>
+  <:item title="Body">{@interview.body}</:item>
+  <:item title="Photo url">{@interview.photo_url}</:item>
+  <:item title="Published">{@interview.published}</:item>
+</.list>
+
+<.back navigate={~p"/admin/interviews"}>Back to interviews</.back>
+
+<.modal :if={@live_action == :edit} id="interview-modal" show on_cancel={JS.patch(~p"/admin/interviews/#{@interview}")}>
+  <.live_component
+    module={ChennaiAssistWeb.Admin.InterviewLive.FormComponent}
+    id={@interview.id}
+    title={@page_title}
+    action={@live_action}
+    interview={@interview}
+    patch={~p"/admin/interviews/#{@interview}"}
+  />
+</.modal>

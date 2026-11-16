@@ -1,0 +1,46 @@
+<.header>
+  Listing Guides
+  <:actions>
+    <.link patch={~p"/admin/guides/new"}>
+      <.button>New Guide</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table
+  id="guides"
+  rows={@streams.guides}
+  row_click={fn {_id, guide} -> JS.navigate(~p"/admin/guides/#{guide}") end}
+>
+  <:col :let={{_id, guide}} label="Title">{guide.title}</:col>
+  <:col :let={{_id, guide}} label="Slug">{guide.slug}</:col>
+  <:col :let={{_id, guide}} label="Category">{guide.category}</:col>
+  <:col :let={{_id, guide}} label="Summary">{guide.summary}</:col>
+  <:col :let={{_id, guide}} label="Body">{guide.body}</:col>
+  <:col :let={{_id, guide}} label="Published">{guide.published}</:col>
+  <:action :let={{_id, guide}}>
+    <div class="sr-only">
+      <.link navigate={~p"/admin/guides/#{guide}"}>Show</.link>
+    </div>
+    <.link patch={~p"/admin/guides/#{guide}/edit"}>Edit</.link>
+  </:action>
+  <:action :let={{id, guide}}>
+    <.link
+      phx-click={JS.push("delete", value: %{id: guide.id}) |> hide("##{id}")}
+      data-confirm="Are you sure?"
+    >
+      Delete
+    </.link>
+  </:action>
+</.table>
+
+<.modal :if={@live_action in [:new, :edit]} id="guide-modal" show on_cancel={JS.patch(~p"/admin/guides")}>
+  <.live_component
+    module={ChennaiAssistWeb.Admin.GuideLive.FormComponent}
+    id={@guide.id || :new}
+    title={@page_title}
+    action={@live_action}
+    guide={@guide}
+    patch={~p"/admin/guides"}
+  />
+</.modal>
