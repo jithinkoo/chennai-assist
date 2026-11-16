@@ -31,6 +31,19 @@ if uploads_dir = System.get_env("UPLOADS_DIR") do
   config :chennai_assist, uploads_dir: uploads_dir
 end
 
+# Local development against a hosted database (e.g. a Neon "dev" branch):
+# set DATABASE_URL and it replaces the local settings in config/dev.exs.
+if config_env() == :dev and System.get_env("DATABASE_URL") do
+  dev_uri = URI.parse(System.get_env("DATABASE_URL"))
+  dev_neon? = String.ends_with?(dev_uri.host || "", ".neon.tech")
+
+  config :chennai_assist, ChennaiAssist.Repo,
+    url: URI.to_string(%{dev_uri | query: nil}),
+    ssl: System.get_env("DATABASE_SSL", to_string(dev_neon?)) in ~w(true 1),
+    prepare: if(dev_neon?, do: :unnamed, else: :named),
+    pool_size: 5
+end
+
 if config_env() == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||
