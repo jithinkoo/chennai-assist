@@ -43,7 +43,7 @@ defmodule ChennaiAssistWeb do
         layouts: [html: ChennaiAssistWeb.Layouts]
 
       import Plug.Conn
-      import ChennaiAssistWeb.Gettext
+      use Gettext, backend: ChennaiAssistWeb.Gettext
 
       unquote(verified_routes())
     end
@@ -85,7 +85,7 @@ defmodule ChennaiAssistWeb do
       import Phoenix.HTML
       # Core UI components and translation
       import ChennaiAssistWeb.CoreComponents
-      import ChennaiAssistWeb.Gettext
+      use Gettext, backend: ChennaiAssistWeb.Gettext
 
       # Shortcut for generating JS commands
       alias Phoenix.LiveView.JS

@@ -17,7 +17,7 @@ defmodule ChennaiAssistWeb.CoreComponents do
   use Phoenix.Component
 
   alias Phoenix.LiveView.JS
-  import ChennaiAssistWeb.Gettext
+  use Gettext, backend: ChennaiAssistWeb.Gettext
 
   @doc """
   Renders a modal.
