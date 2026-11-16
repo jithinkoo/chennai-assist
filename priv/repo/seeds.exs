@@ -11,12 +11,21 @@ alias ChennaiAssist.Accounts
 
 # --- Admin account -----------------------------------------------------------
 # Set ADMIN_EMAIL and ADMIN_PASSWORD (12+ characters) before running seeds.
-admin_email = System.get_env("ADMIN_EMAIL", "admin@example.com")
-admin_password = System.get_env("ADMIN_PASSWORD", "change-me-please-now")
+admin_email = System.get_env("ADMIN_EMAIL")
+admin_password = System.get_env("ADMIN_PASSWORD")
 
-unless Accounts.get_user_by_email(admin_email) do
-  {:ok, _} = Accounts.register_user(%{email: admin_email, password: admin_password})
-  IO.puts("Created admin #{admin_email}")
+cond do
+  is_nil(admin_email) or is_nil(admin_password) ->
+    IO.puts("ADMIN_EMAIL / ADMIN_PASSWORD not set: no admin account created")
+
+  Accounts.get_user_by_email(admin_email) ->
+    :ok
+
+  true ->
+    case Accounts.register_user(%{email: admin_email, password: admin_password}) do
+      {:ok, _} -> IO.puts("Created admin #{admin_email}")
+      {:error, cs} -> IO.puts("Admin not created: #{inspect(cs.errors)} (password needs 12+ characters)")
+    end
 end
 
 # --- City guide ---------------------------------------------------------------

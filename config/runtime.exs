@@ -59,7 +59,9 @@ if config_env() == :prod do
       You can generate one by calling: mix phx.gen.secret
       """
 
-  host = System.get_env("PHX_HOST") || "example.com"
+  # On Render, RENDER_EXTERNAL_HOSTNAME is set automatically (e.g. jithin.onrender.com).
+  host =
+    System.get_env("PHX_HOST") || System.get_env("RENDER_EXTERNAL_HOSTNAME") || "example.com"
   port = String.to_integer(System.get_env("PORT") || "4000")
 
   config :chennai_assist, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
@@ -71,7 +73,8 @@ if config_env() == :prod do
       # Set it to  {0, 0, 0, 0, 0, 0, 0, 1} for local network only access.
       # See the documentation on https://hexdocs.pm/bandit/Bandit.html#t:options/0
       # for details about using IPv6 vs IPv4 and loopback vs public addresses.
-      ip: {0, 0, 0, 0, 0, 0, 0, 0},
+      # IPv4 on all interfaces: works on Render and on hosts without IPv6.
+      ip: {0, 0, 0, 0},
       port: port
     ],
     secret_key_base: secret_key_base
@@ -125,4 +128,14 @@ if config_env() == :prod do
   #     config :swoosh, :api_client, Swoosh.ApiClient.Hackney
   #
   # See https://hexdocs.pm/swoosh/Swoosh.html#module-installation for details.
+
+  # Chennai Assist: send real email through Brevo (free tier) when
+  # BREVO_API_KEY is set; otherwise emails are only written to the log.
+  if brevo_key = System.get_env("BREVO_API_KEY") do
+    config :chennai_assist, ChennaiAssist.Mailer,
+      adapter: Swoosh.Adapters.Brevo,
+      api_key: brevo_key
+  else
+    config :chennai_assist, ChennaiAssist.Mailer, adapter: Swoosh.Adapters.Logger
+  end
 end
