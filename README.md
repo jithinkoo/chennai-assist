@@ -51,7 +51,7 @@ Render. The repo includes `render.yaml`, `build.sh` and `rel/overlays/bin/start`
    dashboard click **Connect** and copy the connection string
    (`postgresql://...neon.tech/neondb?sslmode=require...`).
 2. **Render:** **New → Blueprint**, pick this GitHub repo. It creates a web
-   service named `jithin` (address `jithin.onrender.com` if the name is free).
+   service named `city-assist` (address `city-assist.onrender.com` if the name is free).
 3. When asked, fill in `DATABASE_URL` (the Neon string), `ADMIN_EMAIL` and
    `ADMIN_PASSWORD` (12+ characters). `BREVO_API_KEY` and `MAIL_FROM` are
    optional (for real emails). Click **Apply**.

@@ -3,8 +3,8 @@
 # In Render: New -> Blueprint -> pick this repo.
 services:
   - type: web
-    # The service name sets the address: jithin.onrender.com (if free).
-    name: jithin
+    # The service name sets the address: city-assist.onrender.com (if free).
+    name: city-assist
     runtime: elixir
     plan: free
     region: singapore
