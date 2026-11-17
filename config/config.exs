@@ -9,7 +9,10 @@ import Config
 
 config :chennai_assist,
   ecto_repos: [ChennaiAssist.Repo],
-  generators: [timestamp_type: :utc_datetime]
+  generators: [timestamp_type: :utc_datetime],
+  # In production the app migrates the database and runs the seeds itself on
+  # boot, so it works whatever start command the host uses.
+  auto_migrate: config_env() == :prod
 
 # Configures the endpoint
 config :chennai_assist, ChennaiAssistWeb.Endpoint,
