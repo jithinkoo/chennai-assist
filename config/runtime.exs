@@ -25,6 +25,14 @@ config :chennai_assist,
   admin_email: System.get_env("ADMIN_EMAIL"),
   mail_from: System.get_env("MAIL_FROM", "noreply@chennai-assist.local")
 
+# Telegram alerts to the admin's phone (see /admin/notifications).
+# TELEGRAM_CHAT_ID is optional: the chat can be linked from the admin page.
+if config_env() != :test do
+  config :chennai_assist,
+    telegram_bot_token: System.get_env("TELEGRAM_BOT_TOKEN"),
+    telegram_chat_id: System.get_env("TELEGRAM_CHAT_ID")
+end
+
 # Where uploaded photos are stored (served at /uploads). Point this at a
 # persistent disk in production so photos survive redeploys.
 if uploads_dir = System.get_env("UPLOADS_DIR") do

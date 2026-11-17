@@ -36,8 +36,13 @@ defmodule ChennaiAssistWeb.Router do
   scope "/admin", ChennaiAssistWeb.Admin, as: :admin do
     pipe_through [:browser, :require_authenticated_user]
 
-    live_session :admin, on_mount: [{ChennaiAssistWeb.UserAuth, :ensure_authenticated}] do
+    live_session :admin,
+      on_mount: [
+        {ChennaiAssistWeb.UserAuth, :ensure_authenticated},
+        ChennaiAssistWeb.Admin.AlertsHook
+      ] do
       live "/", DashboardLive, :index
+      live "/notifications", NotificationsLive, :index
       live "/chats", ChatsLive, :index
       live "/chats/:id", ChatsLive, :show
       live "/questions", QuestionsLive, :index

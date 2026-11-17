@@ -8,7 +8,7 @@ defmodule ChennaiAssist.Chat do
   """
   import Ecto.Query, warn: false
 
-  alias ChennaiAssist.Repo
+  alias ChennaiAssist.{Alerts, Repo}
   alias ChennaiAssist.Chat.{Conversation, Message}
 
   @pubsub ChennaiAssist.PubSub
@@ -29,16 +29,30 @@ defmodule ChennaiAssist.Chat do
 
   def change_start(attrs \\ %{}), do: Conversation.start_changeset(%Conversation{}, attrs)
 
+  @doc """
+  Starts a conversation. An optional first message (`"message"` in attrs) is
+  saved straight away. The admin is alerted once either way.
+  """
   def start_conversation(attrs) do
     token = :crypto.strong_rand_bytes(24) |> Base.url_encode64(padding: false)
 
     %Conversation{token: token, last_message_at: now(), unread_by_admin: true}
     |> Conversation.start_changeset(attrs)
     |> Repo.insert()
-    |> tap(fn
-      {:ok, conv} -> broadcast_admin({:conversation_updated, conv})
-      _ -> :ok
-    end)
+    |> case do
+      {:ok, conv} ->
+        broadcast_admin({:conversation_updated, conv})
+        first = String.trim(attrs["message"] || attrs[:message] || "")
+
+        # A first message alerts through send_message/3; otherwise alert here.
+        if first == "" or match?({:error, _}, send_message(conv, "visitor", first)),
+          do: Alerts.chat_started(conv)
+
+        {:ok, conv}
+
+      error ->
+        error
+    end
   end
 
   def get_conversation_by_token(token) when is_binary(token),
@@ -116,6 +130,7 @@ defmodule ChennaiAssist.Chat do
       {:ok, {msg, conv}} ->
         Phoenix.PubSub.broadcast(@pubsub, conversation_topic(conv.id), {:new_message, msg})
         broadcast_admin({:conversation_updated, conv})
+        if sender == "visitor", do: Alerts.visitor_message(conv, msg)
         {:ok, msg}
 
       {:error, changeset} ->

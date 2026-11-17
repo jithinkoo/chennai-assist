@@ -47,6 +47,7 @@ defmodule ChennaiAssist.HelpDesk do
       {:ok, question} ->
         Phoenix.PubSub.broadcast(@pubsub, @admin_topic, {:question_updated, question})
         Notifier.question_received(question)
+        ChennaiAssist.Alerts.question_asked(question)
 
       _ ->
         :ok

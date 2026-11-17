@@ -21,6 +21,9 @@ import "phoenix_html"
 import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 import topbar from "../vendor/topbar"
+import {setupAdminAlerts} from "./admin_alerts"
+
+setupAdminAlerts()
 
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 // Keeps a chat window scrolled to the newest message.

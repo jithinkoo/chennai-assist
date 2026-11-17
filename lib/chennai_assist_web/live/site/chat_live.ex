@@ -50,8 +50,6 @@ defmodule ChennaiAssistWeb.Site.ChatLive do
   def handle_event("start", %{"start" => params}, socket) do
     case Chat.start_conversation(params) do
       {:ok, conversation} ->
-        first = String.trim(params["message"] || "")
-        if first != "", do: Chat.send_message(conversation, "visitor", first)
         Notifier.chat_started(conversation, url(~p"/chat/#{conversation.token}"))
         {:noreply, push_patch(socket, to: ~p"/chat/#{conversation.token}")}
 
