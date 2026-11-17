@@ -17,6 +17,13 @@ defmodule ChennaiAssistWeb.Router do
     plug :accepts, ["json"]
   end
 
+  ## Health check: a light URL for uptime monitors / keep-awake pings.
+  ## No session, no database.
+
+  scope "/", ChennaiAssistWeb do
+    get "/health", HealthController, :show
+  end
+
   ## Telegram replies from the admin (see TelegramWebhookController)
 
   scope "/telegram", ChennaiAssistWeb do
