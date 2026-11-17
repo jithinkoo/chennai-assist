@@ -13,6 +13,17 @@ defmodule ChennaiAssistWeb.Router do
     plug :fetch_current_user
   end
 
+  pipeline :api do
+    plug :accepts, ["json"]
+  end
+
+  ## Telegram replies from the admin (see TelegramWebhookController)
+
+  scope "/telegram", ChennaiAssistWeb do
+    pipe_through :api
+    post "/webhook", TelegramWebhookController, :create
+  end
+
   ## Public site
 
   scope "/", ChennaiAssistWeb.Site do

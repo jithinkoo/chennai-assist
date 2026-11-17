@@ -2,51 +2,10 @@ defmodule ChennaiAssist.AlertsTest do
   # Not async: changes application env for the Telegram API.
   use ChennaiAssist.DataCase, async: false
 
-  alias ChennaiAssist.{Alerts, Chat, HelpDesk, Settings, Telegram}
-
-  defmodule FakeTelegram do
-    @moduledoc false
-    # Minimal stand-in for api.telegram.org: forwards each call to the test.
-    use Plug.Router
-    plug :match
-    plug Plug.Parsers, parsers: [:json], json_decoder: Jason
-    plug :dispatch
-
-    post "/bot:token/:method" do
-      send(:alerts_test, {:telegram, token, method, conn.body_params})
-
-      result =
-        case method do
-          "getUpdates" ->
-            [
-              %{"message" => %{"chat" => %{"type" => "group", "id" => -5}}},
-              %{"message" => %{"chat" => %{"type" => "private", "id" => 4242, "first_name" => "Jithin"}}}
-            ]
-
-          _ ->
-            %{"message_id" => 1}
-        end
-
-      conn
-      |> put_resp_content_type("application/json")
-      |> send_resp(200, Jason.encode!(%{"ok" => true, "result" => result}))
-    end
-  end
+  alias ChennaiAssist.{Alerts, Chat, FakeTelegram, HelpDesk, Settings, Telegram}
 
   setup do
-    Process.register(self(), :alerts_test)
-    port = 40_000 + :rand.uniform(9_000)
-    start_supervised!({Bandit, plug: FakeTelegram, port: port, ip: {127, 0, 0, 1}, startup_log: false})
-
-    Application.put_env(:chennai_assist, :telegram_api, "http://127.0.0.1:#{port}")
-    Application.put_env(:chennai_assist, :telegram_bot_token, "TEST-TOKEN")
-
-    on_exit(fn ->
-      Application.delete_env(:chennai_assist, :telegram_api)
-      Application.delete_env(:chennai_assist, :telegram_bot_token)
-      Application.delete_env(:chennai_assist, :telegram_chat_id)
-    end)
-
+    FakeTelegram.setup_fake(&start_supervised!/1)
     # Background Telegram sends run in Tasks that need DB access.
     Ecto.Adapters.SQL.Sandbox.mode(ChennaiAssist.Repo, {:shared, self()})
     :ok
@@ -63,8 +22,11 @@ defmodule ChennaiAssist.AlertsTest do
   end
 
   test "link_latest_chat saves the most recent private chat" do
-    assert {:ok, "Jithin"} = Telegram.link_latest_chat()
+    # The test endpoint is plain http, so the reply webhook is not registered.
+    assert {:ok, "Jithin", :replies_off} = Telegram.link_latest_chat()
+    assert_receive {:telegram, "TEST-TOKEN", "deleteWebhook", _}
     assert_receive {:telegram, "TEST-TOKEN", "getUpdates", _}
+    refute_receive {:telegram, _, "setWebhook", _}, 100
     assert Settings.get("telegram_chat_id") == "4242"
     assert Telegram.ready?()
   end
@@ -84,6 +46,7 @@ defmodule ChennaiAssist.AlertsTest do
     assert_receive {:telegram, _, "sendMessage", %{"chat_id" => "4242", "text" => text}}
     assert text =~ "💬 Ravi: Is Velachery good for families?"
     assert text =~ "/admin/chats/#{conv.id}"
+    assert Alerts.parse_reference(text) == {:chat, conv.id}
     assert_receive {:admin_alert, %{url: url}}
     assert url == "/admin/chats/#{conv.id}"
     refute_receive {:telegram, _, "sendMessage", _}, 200
@@ -92,7 +55,7 @@ defmodule ChennaiAssist.AlertsTest do
     {:ok, _} = Chat.send_message(conv, "admin", "Yes!")
     refute_receive {:telegram, _, "sendMessage", _}, 200
 
-    {:ok, _} =
+    {:ok, q} =
       HelpDesk.ask_question(%{
         "name" => "Meena",
         "email" => "m@example.com",
@@ -102,5 +65,12 @@ defmodule ChennaiAssist.AlertsTest do
 
     assert_receive {:telegram, _, "sendMessage", %{"text" => q_text}}
     assert q_text =~ "❓ New question from Meena"
+    assert Alerts.parse_reference(q_text) == {:question, q.id}
+  end
+
+  test "parse_reference uses the trailing reference, not one quoted in a message" do
+    assert Alerts.parse_reference("💬 Ravi: see Chat #3 please\nChat #12\n\n↩️ ...") == {:chat, 12}
+    assert Alerts.parse_reference("hello") == :none
+    assert Alerts.parse_reference(nil) == :none
   end
 end

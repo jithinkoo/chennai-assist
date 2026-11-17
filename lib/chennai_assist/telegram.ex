@@ -42,10 +42,61 @@ defmodule ChennaiAssist.Telegram do
   end
 
   @doc """
-  Finds the private chat that most recently messaged the bot and saves it as
-  the alert destination. Returns `{:ok, name}` or `{:error, reason}`.
+  Secret Telegram must send in the X-Telegram-Bot-Api-Secret-Token header on
+  webhook calls. Derived from the bot token, so it changes if the token does.
+  """
+  def webhook_secret do
+    :crypto.mac(:hmac, :sha256, "chennai-assist-webhook", token() || "")
+    |> Base.url_encode64(padding: false)
+  end
+
+  def webhook_url, do: ChennaiAssistWeb.Endpoint.url() <> "/telegram/webhook"
+
+  @doc """
+  Links the admin's phone, then turns on replies from Telegram.
+
+  Finds the private chat that most recently messaged the bot, saves it as the
+  alert destination, and registers the webhook so the admin's replies reach the
+  site. Returns `{:ok, name, :replies_on | :replies_off}` or `{:error, reason}`.
   """
   def link_latest_chat do
+    # getUpdates only works while no webhook is set.
+    _ = request("deleteWebhook", %{})
+
+    with {:ok, name} <- find_and_save_chat() do
+      {:ok, name, enable_replies()}
+    end
+  end
+
+  defp enable_replies do
+    url = webhook_url()
+
+    # Telegram only calls https URLs, so replies need the deployed site.
+    if String.starts_with?(url, "https://") do
+      case request("setWebhook", %{
+             url: url,
+             secret_token: webhook_secret(),
+             allowed_updates: ["message"],
+             drop_pending_updates: true
+           }) do
+        {:ok, %{"ok" => true}} -> :replies_on
+        _ -> :replies_off
+      end
+    else
+      :replies_off
+    end
+  end
+
+  @doc "Sends `text` as a reply to one of the admin's Telegram messages."
+  def reply(chat_id, reply_to_message_id, text) do
+    request("sendMessage", %{
+      chat_id: chat_id,
+      text: text,
+      reply_parameters: %{message_id: reply_to_message_id, allow_sending_without_reply: true}
+    })
+  end
+
+  defp find_and_save_chat do
     with {:ok, %{"result" => updates}} <- request("getUpdates", %{}) do
       chat =
         updates

@@ -17,8 +17,19 @@ defmodule ChennaiAssistWeb.Admin.NotificationsLive do
   def handle_event("link", _params, socket) do
     socket =
       case Telegram.link_latest_chat() do
-        {:ok, name} ->
-          put_flash(socket, :info, "Linked to #{name}'s Telegram. Send a test to check.")
+        {:ok, name, :replies_on} ->
+          put_flash(
+            socket,
+            :info,
+            "Linked to #{name}'s Telegram. You can now swipe-reply to alerts in Telegram to answer visitors."
+          )
+
+        {:ok, name, :replies_off} ->
+          put_flash(
+            socket,
+            :info,
+            "Linked to #{name}'s Telegram for alerts. Replying from Telegram works only on the live https site."
+          )
 
         {:error, :no_message} ->
           put_flash(socket, :error, "No message found. Open your bot in Telegram, press Start (or send \"hi\"), then try again.")
@@ -82,9 +93,18 @@ defmodule ChennaiAssistWeb.Admin.NotificationsLive do
           Bot token found. Now open your bot in Telegram, press <b>Start</b> (or send "hi"), then click
           <b>Link Telegram</b>.
         </p>
-        <p :if={@ready} class="text-zinc-700">
-          Alerts go to your Telegram. To link a different phone, message the bot from it and click Link again.
-        </p>
+        <div :if={@ready} class="text-zinc-700 space-y-2">
+          <p>Alerts go to your Telegram.</p>
+          <p>
+            <b>Reply from Telegram:</b>
+            swipe-reply (or long-press → Reply) on an alert and type your answer. Chat replies appear
+            instantly in the visitor's chat; question replies are saved and emailed to the visitor.
+          </p>
+          <p class="text-sm text-zinc-500">
+            Updated the site or the bot token? Click Link Telegram again. To use a different phone,
+            message the bot from it first.
+          </p>
+        </div>
         <div class="flex flex-wrap gap-3">
           <.button phx-click="link" phx-disable-with="Linking...">Link Telegram</.button>
           <.button :if={@ready} phx-click="test" phx-disable-with="Sending..." class="!bg-sea">
