@@ -11,20 +11,41 @@ alias ChennaiAssist.Accounts
 
 # --- Admin account -----------------------------------------------------------
 # Set ADMIN_EMAIL and ADMIN_PASSWORD (12+ characters) before running seeds.
-admin_email = System.get_env("ADMIN_EMAIL")
-admin_password = System.get_env("ADMIN_PASSWORD")
+# ADMIN_PASSWORD is the source of truth: if the admin already exists with a
+# different password, it is reset to ADMIN_PASSWORD (and old logins end).
+trimmed = fn name ->
+  case System.get_env(name) do
+    nil -> nil
+    value -> if String.trim(value) == "", do: nil, else: String.trim(value)
+  end
+end
+
+admin_email = trimmed.("ADMIN_EMAIL")
+admin_password = trimmed.("ADMIN_PASSWORD")
 
 cond do
   is_nil(admin_email) or is_nil(admin_password) ->
-    IO.puts("ADMIN_EMAIL / ADMIN_PASSWORD not set: no admin account created")
+    IO.puts("Admin: ADMIN_EMAIL / ADMIN_PASSWORD not set, so no admin account was created")
 
-  Accounts.get_user_by_email(admin_email) ->
-    :ok
+  String.length(admin_password) < 12 ->
+    IO.puts("Admin: ADMIN_PASSWORD is shorter than 12 characters, so the admin was not created/updated")
+
+  user = Accounts.get_user_by_email(admin_email) ->
+    if Accounts.User.valid_password?(user, admin_password) do
+      IO.puts("Admin: #{admin_email} ready")
+    else
+      user
+      |> Accounts.User.password_changeset(%{password: admin_password})
+      |> Repo.update!()
+
+      Repo.delete_all(Accounts.UserToken.by_user_and_contexts_query(user, :all))
+      IO.puts("Admin: password for #{admin_email} reset to ADMIN_PASSWORD")
+    end
 
   true ->
     case Accounts.register_user(%{email: admin_email, password: admin_password}) do
-      {:ok, _} -> IO.puts("Created admin #{admin_email}")
-      {:error, cs} -> IO.puts("Admin not created: #{inspect(cs.errors)} (password needs 12+ characters)")
+      {:ok, _} -> IO.puts("Admin: created #{admin_email}")
+      {:error, cs} -> IO.puts("Admin: not created: #{inspect(cs.errors)}")
     end
 end
 
