@@ -50,7 +50,7 @@ Checks: `flutter analyze` and `flutter test`.
   installing directly but not accepted by the Play Store. Create an upload key
   and configure `android/app/build.gradle.kts` (see
   https://docs.flutter.dev/deployment/android#sign-the-app).
-- **App ID:** `in.cityhelp.chennai_assist` (change before the first upload if
+- **App ID:** `com.cityhelp.chennai_assist` (change before the first upload if
   you want a different one; it cannot change afterwards).
 - **Icon:** replace the default Flutter icon (e.g. with `flutter_launcher_icons`).
 - **iOS:** needs a Mac with Xcode and an Apple Developer account.

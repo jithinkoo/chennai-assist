@@ -1,4 +1,4 @@
-package `in`.cityhelp.chennai_assist
+package com.cityhelp.chennai_assist
 
 import io.flutter.embedding.android.FlutterActivity
 
