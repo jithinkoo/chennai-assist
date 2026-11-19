@@ -15,6 +15,12 @@ defmodule ChennaiAssistWeb.Endpoint do
     websocket: [connect_info: [session: @session_options]],
     longpoll: [connect_info: [session: @session_options]]
 
+  # Mobile app live chat. Access is by secret chat token (no cookies), so any
+  # origin is allowed; native apps usually send none.
+  socket "/socket", ChennaiAssistWeb.AppSocket,
+    websocket: [check_origin: false],
+    longpoll: false
+
   # Serve at "/" the static files from "priv/static" directory.
   #
   # You should set gzip to true if you are running phx.digest

@@ -24,6 +24,25 @@ defmodule ChennaiAssistWeb.Router do
     get "/health", HealthController, :show
   end
 
+  ## Mobile app API (Flutter app in mobile/)
+
+  scope "/api/v1", ChennaiAssistWeb.API do
+    pipe_through :api
+
+    get "/categories", ContentController, :categories
+    get "/guides", ContentController, :guides
+    get "/guides/:slug", ContentController, :guide
+    get "/photos", ContentController, :photos
+    get "/interviews", ContentController, :interviews
+    get "/interviews/:slug", ContentController, :interview
+    get "/answers", ContentController, :answers
+
+    post "/questions", HelpController, :ask
+    post "/chats", HelpController, :start_chat
+    get "/chats/:token", HelpController, :show_chat
+    post "/chats/:token/messages", HelpController, :send_message
+  end
+
   ## Telegram replies from the admin (see TelegramWebhookController)
 
   scope "/telegram", ChennaiAssistWeb do

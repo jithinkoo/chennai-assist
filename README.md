@@ -89,6 +89,12 @@ Photos are saved to disk and served at `/uploads/...`. On hosts with
 ephemeral disks (Fly.io, Render, Gigalixir), mount a volume and set
 `UPLOADS_DIR` to it, or switch to S3-compatible storage.
 
+## Mobile app
+
+A Flutter visitor app lives in [`mobile/`](mobile/README.md). It uses the JSON
+API under `/api/v1` and the `chat:<token>` channel on `/socket`. GitHub Actions
+builds an Android APK on every change to `mobile/`.
+
 ## Tests
 
 ```bash
