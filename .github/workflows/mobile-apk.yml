@@ -13,6 +13,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # to publish the APK to Releases
     defaults:
       run:
         working-directory: mobile
@@ -43,3 +45,17 @@ jobs:
           name: chennai-assist-android
           path: mobile/build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
+
+      # Publish to GitHub Releases so there is one permanent, login-free link:
+      # https://github.com/jithinkoo/chennai-assist/releases/latest/download/chennai-assist.apk
+      - name: Publish APK to Releases
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp build/app/outputs/flutter-apk/app-release.apk chennai-assist.apk
+          gh release delete android-latest --yes --cleanup-tag || true
+          gh release create android-latest chennai-assist.apk \
+            --title "Chennai Assist Android app" \
+            --notes "Latest Android build (commit ${GITHUB_SHA::7}). Download chennai-assist.apk on your Android phone and open it to install." \
+            --latest
